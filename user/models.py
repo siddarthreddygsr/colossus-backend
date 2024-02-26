@@ -20,12 +20,6 @@ server.ehlo()
 # server.login(sender_email, password)
 
 class User:
-	def vc(self):
-		try:
-			a+belo
-		except:
-			return render_template('email_verification.html')
-
 	def start_session(self, user):
 		del user['password']
 		session['logged_in'] = True
@@ -41,9 +35,7 @@ class User:
 		"name": request.form.get('name'),
 		"email": request.form.get('email'),
 		"password": request.form.get('password'),
-		"verification_token": verification_code,
-		"token_generation_epoch": int(time.time()),
-		"verified": False
+		"token_generation_epoch": int(time.time())
 		}
 
 		# Encrypt the password
@@ -53,76 +45,11 @@ class User:
 		if db.users.find_one({ "email": user['email'] }):
 			return jsonify({ "error": "Email address already in use" }), 400
 
-
-
-		#verify email address
-		
-
-		# Try to log in to server and send email
-		if db.users.insert_one(user):
-			print('Sending email')
-			print("1")
-			try:
-				receiver_email = user['email']
-				print(receiver_email)
-				message =  """\
-				Subject: %s
-
-				%s
-				""" % ("email verification", "Please verify your email address by clicking on the link below:\n\nhttp://127.0.0.1:5000/confirm_email/" + verification_code)
-				server.sendmail(sender_email, receiver_email, message)
-				print('Email sent')
-				return redirect('/email_verification/')
-			except smtplib.SMTPSenderRefused:
-				try:
-					server.quit()
-				except:
-					print('Starting email server')
-					server.login(sender_email, password)
-				try:
-					receiver_email = user['email']
-					print(receiver_email)
-					message =  """\
-					Subject: %s
-
-					%s
-					""" % ("email verification", "Please verify your email address by clicking on the link below:\n\nhttp://127.0.0.1:5000/confirm_email/" + verification_code)
-					server.sendmail(sender_email, receiver_email, message)
-					print('Email sent')
-					return redirect('/email_verification/')
-				except Exception as e:
-					print(e)
-					return jsonify({ "error": "Error sending email" }), 500
-			except Exception as e:
-				# Print any error messages to stdout
-				print("error occured: ", e)
-				return jsonify({ "error": "Error sending email" }), 400
-			print("redirecting")
-
 		return jsonify({ "error": "Signup failed" }), 400
-	
-	def confirm_email(self, token):
-		user = db.users.find_one({
-		"verification_token": token
-		})
-
-		if not user:
-			return jsonify({ "error": "Invalid verification token" }), 400
-		print(int(time.time()) - user['token_generation_epoch'])
-		if int(time.time()) - user['token_generation_epoch'] > 86400:
-			return jsonify({ "error": "Verification token expired" }), 400
-
-		user['verified'] = True
-		db.users.replace_one({ "_id": user['_id'] }, user)
-		print(user)
-		return redirect('/')
 
 	def signout(self):
 		session.clear()
 		return redirect('/')
-	
-	def sign_up(self):
-		return render_template('signup.html')
 	
 
 	def login(self):
